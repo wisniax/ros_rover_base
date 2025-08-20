@@ -1,0 +1,30 @@
+networks:
+  default:
+    name: ros-core-network
+    driver_opts:
+      com.docker.network.bridge.name: br-ros-core
+
+services:
+  ros-rover-base:
+    build:
+      context: .
+      dockerfile: ./.devcontainer/Dockerfile
+    image: wisniax/ros-rover-base:latest
+    container_name: ros-rover-base
+    hostname: ros-rover-base
+    stdin_open: true
+    tty: true
+    pid: "host"
+    ipc: "host"
+    init: true
+    ports:
+      - "2120:22"
+    environment:
+      - TZ=Europe/Warsaw
+    volumes:
+      - type: bind
+        source: ./
+        target: /mnt/local
+        bind:
+          create_host_path: true
+    restart: unless-stopped
