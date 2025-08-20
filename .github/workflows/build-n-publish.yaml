@@ -28,7 +28,7 @@ jobs:
             # - Tag as 'latest'
             # - Tag with the current date, e.g., '2025-08-20'
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
-            type=schedule,pattern={{date 'YYYY-MM-DD'}},enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value={{date 'YYYY-MM-DD'}},enable=${{ github.ref == 'refs/heads/master' }}
 
             # For builds on other branches (e.g., feature branches), tag with the branch name
             type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
