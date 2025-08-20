@@ -95,7 +95,7 @@ jobs:
           cache-to: type=registry,ref=wisniax/ros-rover-base:buildcache-arm64,mode=max
 
   create-manifest:
-    runs-on: ubuntu-latest # Can run on x86-64 runner
+    runs-on: ubuntu-latest
     needs: [build-amd64, build-arm64] # Ensures both arch-specific builds complete
     permissions:
       contents: read
@@ -116,7 +116,6 @@ jobs:
             type=raw,value={{date 'YYYY-MM-DD'}},enable=${{ github.ref == 'refs/heads/master' }}
             type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
 
-
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -125,25 +124,28 @@ jobs:
 
       - name: Create and push multi-arch manifest
         run: |
-          # Retrieve the actual tags used by the previous jobs from outputs for clarity,
-          # though for simple cases like 'latest-amd64'/'latest-arm64' it's predictable.
-          # Here we derive them based on the combined output tags.
-          # If branch specific tags are used for combined meta, derive from that too.
+          COMBINED_FULL_TAGS="${{ steps.meta_combined.outputs.tags }}"
+          echo "Combined Full Tags: $COMBINED_FULL_TAGS"
 
-          COMBINED_TAGS="${{ steps.meta_combined.outputs.tags }}"
-          echo "Combined Tags: $COMBINED_TAGS"
+          IFS=$'\n' read -rd '' -a FULL_TAG_ARRAY <<< "$COMBINED_FULL_TAGS"
 
-          IFS=$'\n' read -rd '' -a TAG_ARRAY <<< "$COMBINED_TAGS"
-
-          # Loop through each combined tag (e.g., 'latest', '2025-08-20')
-          for TAG in "${TAG_ARRAY[@]}"; do
-            if [ -z "$TAG" ]; then
+          # Loop through each full combined tag (e.g., 'wisniax/ros-rover-base:latest')
+          for FULL_TAG in "${FULL_TAG_ARRAY[@]}"; do
+            if [ -z "$FULL_TAG" ]; then
                 continue # Skip empty lines
             fi
-            echo "Processing tag: $TAG"
-            docker manifest create "$TAG" \
-              "wisniax/ros-rover-base:${TAG}-amd64" \
-              "wisniax/ros-rover-base:${TAG}-arm64"
+            echo "Processing full tag: $FULL_TAG"
 
-            docker manifest push "$TAG"
+            # Extract just the tag part (e.g., 'latest' or '2025-08-20')
+            # This assumes the format is always 'repository/image_name:tag_suffix'
+            # and extracts everything after the last colon.
+            TAG_SUFFIX=$(echo "$FULL_TAG" | awk -F: '{print $NF}')
+            echo "Extracted tag suffix: $TAG_SUFFIX"
+
+            # Use the extracted tag suffix to build the arch-specific image names
+            docker manifest create "$FULL_TAG" \
+              "wisniax/ros-rover-base:${TAG_SUFFIX}-amd64" \
+              "wisniax/ros-rover-base:${TAG_SUFFIX}-arm64"
+
+            docker manifest push "$FULL_TAG"
           done
