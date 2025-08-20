@@ -8,8 +8,8 @@ on:
   workflow_dispatch: # 3. Allow manual runs
 
 jobs:
-  build-and-publish-image:
-    runs-on: ubuntu-latest
+  build-amd64:
+    runs-on: ubuntu-latest # This is an x86-64 runner
     permissions:
       contents: read
       packages: write
@@ -18,23 +18,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract Docker metadata
-        id: meta
+      - name: Extract Docker metadata for AMD64
+        id: meta_amd64
         uses: docker/metadata-action@v5
         with:
           images: wisniax/ros-rover-base
+          # Append -amd64 to the tags for the individual image
           tags: |
-            # For any build on the master branch (push, schedule, or manual):
-            # - Tag as 'latest'
-            # - Tag with the current date, e.g., '2025-08-20'
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
-            type=raw,value={{date 'YYYY-MM-DD'}},enable=${{ github.ref == 'refs/heads/master' }}
-
-            # For builds on other branches (e.g., feature branches), tag with the branch name
+            type=raw,value=latest-amd64,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value={{date 'YYYY-MM-DD'}}-amd64,enable=${{ github.ref == 'refs/heads/master' }}
             type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+            # Example for non-master: branch-name-amd64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -45,14 +39,111 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push AMD64 Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./.devcontainer/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64 # Only build for AMD64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=wisniax/ros-rover-base:buildcache
-          cache-to: type=registry,ref=wisniax/ros-rover-base:buildcache,mode=max
+          tags: ${{ steps.meta_amd64.outputs.tags }}
+          labels: ${{ steps.meta_amd64.outputs.labels }}
+          cache-from: type=registry,ref=wisniax/ros-rover-base:buildcache-amd64
+          cache-to: type=registry,ref=wisniax/ros-rover-base:buildcache-amd64,mode=max
+
+  build-arm64:
+    runs-on: ubuntu-latest-arm64 # This is an ARM64 native runner!
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Docker metadata for ARM64
+        id: meta_arm64
+        uses: docker/metadata-action@v5
+        with:
+          images: wisniax/ros-rover-base
+          # Append -arm64 to the tags for the individual image
+          tags: |
+            type=raw,value=latest-arm64,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value={{date 'YYYY-MM-DD'}}-arm64,enable=${{ github.ref == 'refs/heads/master' }}
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
+            # Example for non-master: branch-name-arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push ARM64 Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./.devcontainer/Dockerfile
+          platforms: linux/arm64 # Only build for ARM64
+          push: true
+          tags: ${{ steps.meta_arm64.outputs.tags }}
+          labels: ${{ steps.meta_arm64.outputs.labels }}
+          cache-from: type=registry,ref=wisniax/ros-rover-base:buildcache-arm64
+          cache-to: type=registry,ref=wisniax/ros-rover-base:buildcache-arm64,mode=max
+
+  create-manifest:
+    runs-on: ubuntu-latest # Can run on x86-64 runner
+    needs: [build-amd64, build-arm64] # Ensures both arch-specific builds complete
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository (optional, not strictly needed for manifest creation)
+        uses: actions/checkout@v4
+
+      - name: Extract Docker metadata for combined manifest
+        id: meta_combined
+        uses: docker/metadata-action@v5
+        with:
+          images: wisniax/ros-rover-base # This will be the main multi-arch tag
+          tags: |
+            # Main tags for the combined manifest
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value={{date 'YYYY-MM-DD'}},enable=${{ github.ref == 'refs/heads/master' }}
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
+
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create and push multi-arch manifest
+        run: |
+          # Retrieve the actual tags used by the previous jobs from outputs for clarity,
+          # though for simple cases like 'latest-amd64'/'latest-arm64' it's predictable.
+          # Here we derive them based on the combined output tags.
+          # If branch specific tags are used for combined meta, derive from that too.
+
+          COMBINED_TAGS="${{ steps.meta_combined.outputs.tags }}"
+          echo "Combined Tags: $COMBINED_TAGS"
+
+          IFS=$'\n' read -rd '' -a TAG_ARRAY <<< "$COMBINED_TAGS"
+
+          # Loop through each combined tag (e.g., 'latest', '2025-08-20')
+          for TAG in "${TAG_ARRAY[@]}"; do
+            if [ -z "$TAG" ]; then
+                continue # Skip empty lines
+            fi
+            echo "Processing tag: $TAG"
+            docker manifest create "$TAG" \
+              "wisniax/ros-rover-base:${TAG}-amd64" \
+              "wisniax/ros-rover-base:${TAG}-arm64"
+
+            docker manifest push "$TAG"
+          done
