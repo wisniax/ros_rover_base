@@ -96,60 +96,54 @@ jobs:
 
   create-manifest:
     runs-on: ubuntu-latest
-    needs: [build-amd64, build-arm64] # Ensures both arch-specific builds complete
+    needs: [build-amd64, build-arm64]
+    # This job only runs if the master branch builds succeed
+    if: github.ref == 'refs/heads/master'
     permissions:
       contents: read
       packages: write
 
     steps:
-      - name: Checkout repository (optional, not strictly needed for manifest creation)
-        uses: actions/checkout@v4
-
-      - name: Extract Docker metadata for combined manifest
-        id: meta_combined
-        uses: docker/metadata-action@v5
-        with:
-          images: wisniax/ros-rover-base # This will be the main multi-arch tag
-          tags: |
-            # Main tags for the combined manifest
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
-            type=raw,value={{date 'YYYY-MM-DD'}},enable=${{ github.ref == 'refs/heads/master' }}
-            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
-
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Extract Docker metadata for combined manifest
+        id: meta_combined
+        uses: docker/metadata-action@v5
+        with:
+          images: wisniax/ros-rover-base
+          tags: |
+            type=raw,value=latest
+            type=raw,value={{date 'YYYY-MM-DD'}}
+
       - name: Create and push multi-arch manifest
         run: |
-          COMBINED_FULL_TAGS="${{ steps.meta_combined.outputs.tags }}"
-          echo "Combined Full Tags Raw: '$COMBINED_FULL_TAGS'" # See raw output for debugging
+          # The output from the metadata action is a multi-line string.
+          # We read it into a bash array to loop through each tag.
+          IFS=$'\n' read -rd '' -a TAG_ARRAY <<< "${{ steps.meta_combined.outputs.tags }}"
 
-          # Use `readarray` or `IFS` for robust splitting.
-          # `mapfile` (or `readarray`) is generally preferred for reading lines into an array.
-          mapfile -t FULL_TAG_ARRAY <<< "$COMBINED_FULL_TAGS"
-
-          # Loop through each full combined tag (e.g., 'wisniax/ros-rover-base:latest')
-          for LINE in "${FULL_TAG_ARRAY[@]}"; do
-            # Trim whitespace from the beginning and end of the line
-            FULL_TAG=$(echo "$LINE" | xargs)
-            if [ -z "$FULL_TAG" ]; then
-                continue # Skip empty or whitespace-only lines
+          for TAG in "${TAG_ARRAY[@]}"; do
+            if [ -z "$TAG" ]; then
+                continue # Skip empty lines
             fi
-            echo "Processing trimmed full tag: '$FULL_TAG'" # Print with quotes to see no leading/trailing space
+            
+            # The manifest name must be the full repository:tag format
+            MANIFEST_NAME="wisniax/ros-rover-base:${TAG}"
+            
+            # The source images also need the full repository name
+            AMD64_IMAGE="wisniax/ros-rover-base:${TAG}-amd64"
+            ARM64_IMAGE="wisniax/ros-rover-base:${TAG}-arm64"
 
-            # Extract just the tag part (e.g., 'latest' or '2025-08-20')
-            # This assumes the format is always 'repository/image_name:tag_suffix'
-            # and extracts everything after the last colon.
-            TAG_SUFFIX=$(echo "$FULL_TAG" | awk -F: '{print $NF}')
-            echo "Extracted tag suffix: '$TAG_SUFFIX'" # Print with quotes
+            echo "Creating manifest: ${MANIFEST_NAME}"
+            echo "--> AMD64 Source: ${AMD64_IMAGE}"
+            echo "--> ARM64 Source: ${ARM64_IMAGE}"
 
-            # Use the extracted tag suffix to build the arch-specific image names
-            docker manifest create "$FULL_TAG" \
-              "wisniax/ros-rover-base:${TAG_SUFFIX}-amd64" \
-              "wisniax/ros-rover-base:${TAG_SUFFIX}-arm64"
+            docker manifest create "${MANIFEST_NAME}" \
+              "${AMD64_IMAGE}" \
+              "${ARM64_IMAGE}"
 
-            docker manifest push "$FULL_TAG"
+            docker manifest push "${MANIFEST_NAME}"
           done
