@@ -125,22 +125,26 @@ jobs:
       - name: Create and push multi-arch manifest
         run: |
           COMBINED_FULL_TAGS="${{ steps.meta_combined.outputs.tags }}"
-          echo "Combined Full Tags: $COMBINED_FULL_TAGS"
+          echo "Combined Full Tags Raw: '$COMBINED_FULL_TAGS'" # See raw output for debugging
 
-          IFS=$'\n' read -rd '' -a FULL_TAG_ARRAY <<< "$COMBINED_FULL_TAGS"
+          # Use `readarray` or `IFS` for robust splitting.
+          # `mapfile` (or `readarray`) is generally preferred for reading lines into an array.
+          mapfile -t FULL_TAG_ARRAY <<< "$COMBINED_FULL_TAGS"
 
           # Loop through each full combined tag (e.g., 'wisniax/ros-rover-base:latest')
-          for FULL_TAG in "${FULL_TAG_ARRAY[@]}"; do
+          for LINE in "${FULL_TAG_ARRAY[@]}"; do
+            # Trim whitespace from the beginning and end of the line
+            FULL_TAG=$(echo "$LINE" | xargs)
             if [ -z "$FULL_TAG" ]; then
-                continue # Skip empty lines
+                continue # Skip empty or whitespace-only lines
             fi
-            echo "Processing full tag: $FULL_TAG"
+            echo "Processing trimmed full tag: '$FULL_TAG'" # Print with quotes to see no leading/trailing space
 
             # Extract just the tag part (e.g., 'latest' or '2025-08-20')
             # This assumes the format is always 'repository/image_name:tag_suffix'
             # and extracts everything after the last colon.
             TAG_SUFFIX=$(echo "$FULL_TAG" | awk -F: '{print $NF}')
-            echo "Extracted tag suffix: $TAG_SUFFIX"
+            echo "Extracted tag suffix: '$TAG_SUFFIX'" # Print with quotes
 
             # Use the extracted tag suffix to build the arch-specific image names
             docker manifest create "$FULL_TAG" \
