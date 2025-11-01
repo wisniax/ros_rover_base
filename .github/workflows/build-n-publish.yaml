@@ -30,15 +30,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push AMD64 Docker image
-        id: push-amd64 # Add an ID to reference outputs
+      - name: Build and push AMD64 image (temporary tag)
+        id: push-amd64
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./.devcontainer/Dockerfile
           platforms: linux/amd64 # Only build for AMD64
           push: true
-          outputs: type=registry
+          tags: wisniax/ros-rover-base:temp-amd64
 
   build-arm64:
     runs-on: ubuntu-24.04-arm # This is an ARM64 native runner!
@@ -62,15 +62,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push ARM64 Docker image
-        id: push-arm64 # Add an ID to reference outputs
+      - name: Build and push ARM64 image (temporary tag)
+        id: push-arm64
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./.devcontainer/Dockerfile
           platforms: linux/arm64 # Only build for ARM64
           push: true
-          outputs: type=registry
+          tags: wisniax/ros-rover-base:temp-arm64
 
   create-manifest:
     runs-on: ubuntu-latest # Can run on x86-64 runner
@@ -108,3 +108,9 @@ jobs:
             wisniax/ros-rover-base@${{ needs.build-arm64.outputs.digest }}
           # Optional: Add Open Container Initiative (OCI) annotations to the manifest list
           index-annotations: ${{ steps.meta_combined.outputs.labels }}
+
+      - name: Delete temporary per-arch tags
+        run: |
+          echo "Deleting temporary image tags from Docker Hub..."
+          docker buildx imagetools rm wisniax/ros-rover-base:temp-amd64 || true
+          docker buildx imagetools rm wisniax/ros-rover-base:temp-arm64 || true
