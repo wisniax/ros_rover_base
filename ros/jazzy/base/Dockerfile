@@ -1,5 +1,5 @@
 # Use the official image as a parent image
-FROM ros:jazzy-perception
+FROM docker.io/library/ros:jazzy
 
 # Default configuration
 ENV ROS_ENABLE_AUTOSTART=0
@@ -24,7 +24,7 @@ RUN apt update && apt upgrade -y && \
     DEBIAN_FRONTEND=noninteractive apt install -y ros-jazzy-ros2-socketcan libasio-dev libceres-dev ros-jazzy-diagnostic-updater \
     ros-jazzy-diagnostic-updater ros-jazzy-rtcm-msgs ros-jazzy-nmea-msgs ros-jazzy-realtime-tools
 
-COPY .devcontainer/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY ros/jazzy/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 CMD [ "/usr/local/bin/docker-entrypoint.sh" ]
