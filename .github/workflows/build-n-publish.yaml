@@ -21,17 +21,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract Docker metadata for AMD64
-        id: meta_amd64
-        uses: docker/metadata-action@v5
-        with:
-          images: wisniax/ros-rover-base
-          # Tag with '-amd64' suffix for the individual architecture image
-          tags: |
-            type=raw,value=latest-amd64,enable=${{ github.ref == 'refs/heads/master' }}
-            type=raw,value={{date 'YYYY-MM-DD'}}-amd64,enable=${{ github.ref == 'refs/heads/master' }}
-            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -49,10 +38,7 @@ jobs:
           file: ./.devcontainer/Dockerfile
           platforms: linux/amd64 # Only build for AMD64
           push: true
-          tags: ${{ steps.meta_amd64.outputs.tags }}
-          labels: ${{ steps.meta_amd64.outputs.labels }}
-          cache-from: type=registry,ref=wisniax/ros-rover-base:buildcache-amd64
-          cache-to: type=registry,ref=wisniax/ros-rover-base:buildcache-amd64,mode=max
+          outputs: type=registry
 
   build-arm64:
     runs-on: ubuntu-24.04-arm # This is an ARM64 native runner!
@@ -66,17 +52,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Extract Docker metadata for ARM64
-        id: meta_arm64
-        uses: docker/metadata-action@v5
-        with:
-          images: wisniax/ros-rover-base
-          # Tag with '-arm64' suffix for the individual architecture image
-          tags: |
-            type=raw,value=latest-arm64,enable=${{ github.ref == 'refs/heads/master' }}
-            type=raw,value={{date 'YYYY-MM-DD'}}-arm64,enable=${{ github.ref == 'refs/heads/master' }}
-            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -95,10 +70,7 @@ jobs:
           file: ./.devcontainer/Dockerfile
           platforms: linux/arm64 # Only build for ARM64
           push: true
-          tags: ${{ steps.meta_arm64.outputs.tags }}
-          labels: ${{ steps.meta_arm64.outputs.labels }}
-          cache-from: type=registry,ref=wisniax/ros-rover-base:buildcache-arm64
-          cache-to: type=registry,ref=wisniax/ros-rover-base:buildcache-arm64,mode=max
+          outputs: type=registry
 
   create-manifest:
     runs-on: ubuntu-latest # Can run on x86-64 runner
