@@ -98,3 +98,25 @@ jobs:
             wisniax/ros-rover-base@${{ needs.build-amd64.outputs.digest }}
             wisniax/ros-rover-base@${{ needs.build-arm64.outputs.digest }}
           index-annotations: ${{ steps.meta_combined.outputs.labels }}
+
+      - name: Delete temporary per-arch tags from Docker Hub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          echo "Deleting temporary image tags from Docker Hub via API..."
+
+          for TAG in temp-amd64 temp-arm64; do
+            echo "Deleting $TAG ..."
+            STATUS=$(curl -sSL -o /dev/null -w "%{http_code}" \
+              --fail-with-body \
+              -X DELETE \
+              -u "${DOCKERHUB_USERNAME}:${DOCKERHUB_TOKEN}" \
+              "https://hub.docker.com/v2/repositories/wisniax/ros-rover-base/tags/${TAG}/") || true
+
+            if [ "$STATUS" = "204" ]; then
+              echo "Deleted $TAG successfully"
+            else
+              echo "Skipped or failed to delete $TAG (status $STATUS)"
+            fi
+          done
