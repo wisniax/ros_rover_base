@@ -1,22 +1,17 @@
 name: Build and publish Raptor Ros-Rover-base Docker Image
 
 on:
-  schedule: # Run weekly every Sunday at 3:00 AM UTC
-    - cron: '0 3 * * 0'
-  push: # 2. Run on push to the master branch
+  schedule:
+    - cron: '0 3 * * 0' # Every Sunday at 3 AM UTC
+  push:
     branches: [ "master" ]
-  workflow_dispatch: # 3. Allow manual runs
+  workflow_dispatch:
 
 jobs:
   build-amd64:
-    runs-on: ubuntu-latest # This is an x86-64 runner
-    permissions:
-      contents: read
-      packages: write
+    runs-on: ubuntu-latest
     outputs:
-      # Expose the digest of the built AMD64 image
       digest: ${{ steps.push-amd64.outputs.digest }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,19 +31,14 @@ jobs:
         with:
           context: .
           file: ./.devcontainer/Dockerfile
-          platforms: linux/amd64 # Only build for AMD64
+          platforms: linux/amd64
           push: true
           tags: wisniax/ros-rover-base:temp-amd64
 
   build-arm64:
-    runs-on: ubuntu-24.04-arm # This is an ARM64 native runner!
-    permissions:
-      contents: read
-      packages: write
+    runs-on: ubuntu-24.04-arm
     outputs:
-      # Expose the digest of the built ARM64 image
       digest: ${{ steps.push-arm64.outputs.digest }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -68,16 +58,13 @@ jobs:
         with:
           context: .
           file: ./.devcontainer/Dockerfile
-          platforms: linux/arm64 # Only build for ARM64
+          platforms: linux/arm64
           push: true
           tags: wisniax/ros-rover-base:temp-arm64
 
   create-manifest:
-    runs-on: ubuntu-latest # Can run on x86-64 runner
-    needs: [build-amd64, build-arm64] # Ensures both arch-specific builds complete
-    permissions:
-      contents: read
-      packages: write # Needed for `docker manifest push` via the action
+    runs-on: ubuntu-latest
+    needs: [build-amd64, build-arm64]
 
     steps:
       - name: Log in to Docker Hub
@@ -90,12 +77,16 @@ jobs:
         id: meta_combined
         uses: docker/metadata-action@v5
         with:
-          images: wisniax/ros-rover-base # This will be the main multi-arch tag
+          images: wisniax/ros-rover-base
           tags: |
             # Main tags for the combined manifest
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
             type=raw,value={{date 'YYYY-MM-DD'}},enable=${{ github.ref == 'refs/heads/master' }}
             type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
+          labels: |
+            org.opencontainers.image.created={{date 'YYYY-MM-DDTHH:mm:ssZ'}}
+            org.opencontainers.image.source=${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
 
       - name: Create and push multi-arch manifest
         uses: int128/docker-manifest-create-action@v2
@@ -106,5 +97,4 @@ jobs:
           sources: |
             wisniax/ros-rover-base@${{ needs.build-amd64.outputs.digest }}
             wisniax/ros-rover-base@${{ needs.build-arm64.outputs.digest }}
-          # Optional: Add Open Container Initiative (OCI) annotations to the manifest list
           index-annotations: ${{ steps.meta_combined.outputs.labels }}
