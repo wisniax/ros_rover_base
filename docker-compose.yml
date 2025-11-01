@@ -8,7 +8,7 @@ services:
   ros-rover-base:
     build:
       context: .
-      dockerfile: ./.devcontainer/Dockerfile
+      dockerfile: ./ros/jazzy/base/Dockerfile
     image: wisniax/ros-rover-base:latest
     container_name: ros-rover-base
     hostname: ros-rover-base

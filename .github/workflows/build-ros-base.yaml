@@ -1,4 +1,4 @@
-name: Build and publish Raptor Ros-Rover-base Docker Image
+name: Build and Push Ros Jazzy Base Container
 
 on:
   schedule:
@@ -30,7 +30,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./.devcontainer/Dockerfile
+          file: ./ros/jazzy/base/Dockerfile
           platforms: linux/amd64
           push: true
           tags: wisniax/ros-rover-base:temp-amd64
@@ -57,7 +57,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./.devcontainer/Dockerfile
+          file: ./ros/jazzy/base/Dockerfile
           platforms: linux/arm64
           push: true
           tags: wisniax/ros-rover-base:temp-arm64
