@@ -108,9 +108,3 @@ jobs:
             wisniax/ros-rover-base@${{ needs.build-arm64.outputs.digest }}
           # Optional: Add Open Container Initiative (OCI) annotations to the manifest list
           index-annotations: ${{ steps.meta_combined.outputs.labels }}
-
-      - name: Delete temporary per-arch tags
-        run: |
-          echo "Deleting temporary image tags from Docker Hub..."
-          docker buildx imagetools rm wisniax/ros-rover-base:temp-amd64 || true
-          docker buildx imagetools rm wisniax/ros-rover-base:temp-arm64 || true
