@@ -1,13 +1,9 @@
-FROM ros:jazzy
+FROM docker.io/wisniax/ros-rover-base:latest
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-    git \
-    wget \
     vim \
-    nano \
-    curl \
     software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
@@ -42,7 +38,6 @@ RUN apt-get update && apt-get install -y \
 
 # ArduPilot Gazebo plugin
 RUN apt-get update && apt-get install -y \
-    rapidjson-dev \
     libopencv-dev \
     libgstreamer1.0-dev \           
     libgstreamer-plugins-base1.0-dev \
@@ -71,7 +66,6 @@ RUN wget https://raw.githubusercontent.com/mavlink/mavros/refs/heads/ros2/mavros
 
 # ArduPilot dependencies
 RUN apt-get update && apt-get install -y \
-    python3-pip \
     python3-dev \
     python3-opencv \
     python3-matplotlib \
@@ -132,11 +126,6 @@ RUN pip3 install --break-system-packages \
 WORKDIR /workspace
 
 RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
-
-# COPY aliases/ /root/aliases/
-RUN chmod +x /root/aliases/*.sh && \
-    echo "# Load drone aliases" >> ~/.bashrc && \
-    echo "for f in /root/aliases/*.sh; do source \$f; done" >> ~/.bashrc
 
 # Set environment variables
 ENV ARDUPILOT_HOME=/opt/ardupilot
