@@ -18,7 +18,7 @@ RUN apt update && \
     DEBIAN_FRONTEND=noninteractive apt install -y \
     ros-jazzy-robot-state-publisher ros-jazzy-xacro ros-jazzy-robot-localization \
     ros-jazzy-mola ros-jazzy-mola-state-estimation ros-jazzy-mola-lidar-odometry \
-    ros-jazzy-rtabmap-ros ros-jazzy-ouster-ros \
+    ros-jazzy-rtabmap-ros ros-jazzy-ouster-ros ros-jazzy-depthai-ros \
     zstd wget
 
 # Create user
