@@ -1,0 +1,10 @@
+# nav_ws_repos.yaml
+repositories:
+  navigation2:
+    type: git
+    url: https://github.com/parsley026/navigation2.git
+    version: jazzy
+  mesh_navigation:
+    type: git
+    url: https://github.com/naturerobots/mesh_navigation.git
+    version: main
