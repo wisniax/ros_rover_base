@@ -8,6 +8,7 @@ RRB_IMAGE_AUTONOMY_TAG ?= autonomy${RRB_IMAGE_TAG_SUFFIX}## overriden tag for au
 RRB_IMAGE_SIMULATION_TAG ?= simulation${RRB_IMAGE_TAG_SUFFIX}## overriden tag for simulation
 RRB_IMAGE_DRONE_TAG ?= drone${RRB_IMAGE_TAG_SUFFIX}## overriden tag for drone
 EXTRA_DOCKER_OPTS ?=## extra docker options
+USERNAME ?= rex## user name inside images
 
 .DEFAULT: all
 
@@ -36,6 +37,7 @@ only_autonomy: ## build autonomy image ONLY
 	@echo -e '\n>> Building ${RRB_IMAGE_NAME}:${RRB_IMAGE_AUTONOMY_TAG}'
 	docker build ${EXTRA_DOCKER_OPTS} \
 	--build-arg RRB_IMAGE_BASE_TAG=${RRB_IMAGE_BASE_TAG} \
+	--build-arg USERNAME=${USERNAME} \
 	-f ./ros/jazzy/autonomy/Dockerfile \
 	-t ${RRB_IMAGE_NAME}:${RRB_IMAGE_AUTONOMY_TAG} \
 	.
