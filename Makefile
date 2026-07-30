@@ -5,6 +5,7 @@ RRB_IMAGE_TAG_SUFFIX := $(if ${RRB_IMAGE_TAG_SUFFIX},-${RRB_IMAGE_TAG_SUFFIX})
 
 RRB_IMAGE_BASE_TAG ?= latest${RRB_IMAGE_TAG_SUFFIX}## overriden tag for base
 RRB_IMAGE_AUTONOMY_TAG ?= autonomy${RRB_IMAGE_TAG_SUFFIX}## overriden tag for autonomy
+RRB_IMAGE_SIMULATION_TAG ?= simulation${RRB_IMAGE_TAG_SUFFIX}## overriden tag for simulation
 RRB_IMAGE_DRONE_TAG ?= drone${RRB_IMAGE_TAG_SUFFIX}## overriden tag for drone
 EXTRA_DOCKER_OPTS ?=## extra docker options
 
@@ -31,21 +32,35 @@ base: ## build base image
 	.
 
 .PHONY: autonomy
-autonomy: base
-autonomy: ## build autonomy image
+only_autonomy: ## build autonomy image ONLY
 	@echo -e '\n>> Building ${RRB_IMAGE_NAME}:${RRB_IMAGE_AUTONOMY_TAG}'
 	docker build ${EXTRA_DOCKER_OPTS} \
 	--build-arg RRB_IMAGE_BASE_TAG=${RRB_IMAGE_BASE_TAG} \
 	-f ./ros/jazzy/autonomy/Dockerfile \
 	-t ${RRB_IMAGE_NAME}:${RRB_IMAGE_AUTONOMY_TAG} \
 	.
+autonomy: base only_autonomy
+autonomy: ## build autonomy image
+
+
+.PHONY: simulation
+only_simulation: ## build simulation image ONLY
+	@echo -e '\n>> Building ${RRB_IMAGE_NAME}:${RRB_IMAGE_SIMULATION_TAG}'
+	docker build ${EXTRA_DOCKER_OPTS} \
+	--build-arg RRB_IMAGE_AUTONOMY_TAG=${RRB_IMAGE_AUTONOMY_TAG} \
+	-f ./ros/jazzy/simulation/Dockerfile \
+	-t ${RRB_IMAGE_NAME}:${RRB_IMAGE_SIMULATION_TAG} \
+	.
+simulation: autonomy only_simulation
+simulation: ## build simulation image
 
 .PHONY: drone
-drone: base
-drone: ## build drone image
+only_drone: ## build drone image ONLY
 	@echo -e '\n>> Building ${RRB_IMAGE_NAME}:${RRB_IMAGE_DRONE_TAG}'
 	docker build ${EXTRA_DOCKER_OPTS} \
 	--build-arg RRB_IMAGE_BASE_TAG=${RRB_IMAGE_BASE_TAG} \
 	-f ./ros/jazzy/drone/Dockerfile \
 	-t ${RRB_IMAGE_NAME}:${RRB_IMAGE_DRONE_TAG} \
 	.
+drone: base only_drone
+drone: ## build drone image
