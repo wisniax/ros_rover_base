@@ -1,4 +1,5 @@
-FROM docker.io/wisniax/ros-rover-base:latest
+ARG RRB_IMAGE_BASE_TAG=latest
+FROM docker.io/wisniax/ros-rover-base:${RRB_IMAGE_BASE_TAG}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
