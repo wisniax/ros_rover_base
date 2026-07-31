@@ -6,6 +6,7 @@ RRB_IMAGE_TAG_SUFFIX := $(if ${RRB_IMAGE_TAG_SUFFIX},-${RRB_IMAGE_TAG_SUFFIX})
 RRB_IMAGE_BASE_TAG ?= latest${RRB_IMAGE_TAG_SUFFIX}## overriden tag for base
 RRB_IMAGE_AUTONOMY_TAG ?= autonomy${RRB_IMAGE_TAG_SUFFIX}## overriden tag for autonomy
 RRB_IMAGE_SIMULATION_TAG ?= simulation${RRB_IMAGE_TAG_SUFFIX}## overriden tag for simulation
+RRB_IMAGE_SIMULATION_ROCM_TAG ?= simulation-rocm${RRB_IMAGE_TAG_SUFFIX}## overriden tag for simulation + ROCm
 RRB_IMAGE_DRONE_TAG ?= drone${RRB_IMAGE_TAG_SUFFIX}## overriden tag for drone
 EXTRA_DOCKER_OPTS ?=## extra docker options
 USERNAME ?= rex## user name inside images
@@ -55,6 +56,17 @@ only_simulation: ## build simulation image ONLY
 	.
 simulation: autonomy only_simulation
 simulation: ## build simulation image
+
+.PHONY: simulation
+only_simulation-rocm: ## build simulation + ROCm image ONLY
+	@echo -e '\n>> Building ${RRB_IMAGE_NAME}:${RRB_IMAGE_SIMULATION_ROCM_TAG}'
+	docker build ${EXTRA_DOCKER_OPTS} \
+	--build-arg RRB_IMAGE_SIMULATION_TAG=${RRB_IMAGE_SIMULATION_TAG} \
+	-f ./ros/jazzy/simulation-rocm/Dockerfile \
+	-t ${RRB_IMAGE_NAME}:${RRB_IMAGE_SIMULATION_ROCM_TAG} \
+	.
+simulation-rocm: autonomy only_simulation-rocm
+simulation-rocm: ## build simulation + ROCm image
 
 .PHONY: drone
 only_drone: ## build drone image ONLY
