@@ -101,6 +101,7 @@ jobs:
   # ---------------------------------------------------------
   build-sim-rocm-amd64:
     runs-on: ubuntu-latest
+    needs: [build-sim-amd64]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
