@@ -4,10 +4,10 @@ RRB_IMAGE_TAG_SUFFIX ?=## suffix for image (e.g. ...SUFFIX=v2 -> tag: base-v2)
 RRB_IMAGE_TAG_SUFFIX := $(if ${RRB_IMAGE_TAG_SUFFIX},-${RRB_IMAGE_TAG_SUFFIX}) 
 
 RRB_IMAGE_BASE_TAG ?= latest${RRB_IMAGE_TAG_SUFFIX}## overriden tag for base
-RRB_IMAGE_AUTONOMY_TAG ?= autonomy${RRB_IMAGE_TAG_SUFFIX}## overriden tag for autonomy
-RRB_IMAGE_SIMULATION_TAG ?= simulation${RRB_IMAGE_TAG_SUFFIX}## overriden tag for simulation
-RRB_IMAGE_SIMULATION_ROCM_TAG ?= simulation-rocm${RRB_IMAGE_TAG_SUFFIX}## overriden tag for simulation + ROCm
-RRB_IMAGE_DRONE_TAG ?= drone${RRB_IMAGE_TAG_SUFFIX}## overriden tag for drone
+RRB_IMAGE_AUTONOMY_TAG ?= autonomy-latest${RRB_IMAGE_TAG_SUFFIX}## overriden tag for autonomy
+RRB_IMAGE_SIMULATION_TAG ?= simulation-latest${RRB_IMAGE_TAG_SUFFIX}## overriden tag for simulation
+RRB_IMAGE_SIMULATION_ROCM_TAG ?= simulation-rocm-latest${RRB_IMAGE_TAG_SUFFIX}## overriden tag for simulation + ROCm
+RRB_IMAGE_DRONE_TAG ?= drone-latest${RRB_IMAGE_TAG_SUFFIX}## overriden tag for drone
 EXTRA_DOCKER_OPTS ?=## extra docker options
 USERNAME ?= rex## user name inside images
 
