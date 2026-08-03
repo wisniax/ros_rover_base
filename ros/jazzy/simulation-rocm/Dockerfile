@@ -1,4 +1,4 @@
-ARG RRB_IMAGE_SIMULATION_TAG=simulation
+ARG RRB_IMAGE_SIMULATION_TAG=simulation-latest
 FROM docker.io/wisniax/ros-rover-base:${RRB_IMAGE_SIMULATION_TAG}
 
 USER root

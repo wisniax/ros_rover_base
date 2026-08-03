@@ -1,4 +1,4 @@
-ARG RRB_IMAGE_AUTONOMY_TAG=autonomy
+ARG RRB_IMAGE_AUTONOMY_TAG=autonomy-latest
 FROM docker.io/wisniax/ros-rover-base:${RRB_IMAGE_AUTONOMY_TAG}
 
 USER root
