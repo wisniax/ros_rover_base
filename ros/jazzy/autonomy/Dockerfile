@@ -12,6 +12,9 @@ ARG SSH_PORT=22
 # Username that will be propagated
 ENV RRB_USERNAME=${USERNAME}
 
+# Configure XDG variables
+ENV XDG_RUNTIME_DIR=/run/${USERNAME}/xdg
+
 # Default configuration
 ENV ROS_ENABLE_AUTOSTART=0
 ENV ROS_BUILD_ON_STARTUP=on-failure
@@ -37,17 +40,29 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
         ros-jazzy-pcl-ros ros-jazzy-point-cloud-transport \
         ros-jazzy-robot-calibration ros-jazzy-robot-localization ros-jazzy-robot-state-publisher ros-jazzy-rtabmap-ros ros-jazzy-rviz-2d-overlay-plugins \
         ros-jazzy-xacro \
-        ros-jazzy-zed-description ros-jazzy-grid-map ros-jazzy-zed-msgs ros-jazzy-zstd-image-transport
+        ros-jazzy-zed-description ros-jazzy-grid-map ros-jazzy-zed-msgs ros-jazzy-zstd-image-transport \
+        waypipe openbox xwayland weston
 
 # Create user
 RUN useradd -m -s /bin/bash ${USERNAME}
 RUN echo "${USERNAME}:${PASSWORD}" | chpasswd
 RUN usermod -aG sudo ${USERNAME}
 
+# Setup XDG_RUNTIME_DIR
+RUN mkdir -p --mode=700 ${XDG_RUNTIME_DIR} \
+    && chown -R ${USERNAME}:${USERNAME} ${XDG_RUNTIME_DIR}
+
 # Change ssh port and expose it
 RUN sed -i "/^#\?Port/ { s/^#//; s/Port .*/Port ${SSH_PORT}/; }" /etc/ssh/sshd_config
 
 USER ${USERNAME}
+
+# Push docker env to docker system
+RUN sed -i "5i # add xdg runtime dir \nexport XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR} \n" ~/.bashrc
+
+# Add weston to aliases
+RUN echo "alias weston_start_desktop=\"weston --xwayland\"" >> ~/.bash_aliases
+
 # Colorful prompts ah yee
 RUN sed -i 's/#force_color_prompt=yes/force_color_prompt=yes/' /home/${USERNAME}/.bashrc
 
