@@ -35,8 +35,6 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: wisniax/ros-rover-base:temp-sim-amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   build-sim-arm64:
     runs-on: ubuntu-24.04-arm
@@ -64,8 +62,6 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: wisniax/ros-rover-base:temp-sim-arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   create-sim-manifest:
     runs-on: ubuntu-latest
@@ -141,5 +137,3 @@ jobs:
           push: true
           tags: ${{ steps.meta_rocm.outputs.tags }}
           labels: ${{ steps.meta_rocm.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
