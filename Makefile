@@ -1,6 +1,6 @@
 RRB_IMAGE_NAME := wisniax/ros-rover-base## image name
 
-RRB_IMAGE_TAG_SUFFIX :=## suffix for image (e.g. ...SUFFIX=v2 -> tag: base-v2)
+RRB_IMAGE_TAG_SUFFIX ?=## suffix for image (e.g. ...SUFFIX=v2 -> tag: base-v2)
 RRB_IMAGE_TAG_SUFFIX := $(if ${RRB_IMAGE_TAG_SUFFIX},-${RRB_IMAGE_TAG_SUFFIX}) 
 
 RRB_IMAGE_BASE_TAG ?= latest${RRB_IMAGE_TAG_SUFFIX}## overriden tag for base
@@ -65,7 +65,7 @@ only_simulation-rocm: ## build simulation + ROCm image ONLY
 	-f ./ros/jazzy/simulation-rocm/Dockerfile \
 	-t ${RRB_IMAGE_NAME}:${RRB_IMAGE_SIMULATION_ROCM_TAG} \
 	.
-simulation-rocm: autonomy only_simulation-rocm
+simulation-rocm: simulation only_simulation-rocm
 simulation-rocm: ## build simulation + ROCm image
 
 .PHONY: drone
