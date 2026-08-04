@@ -133,7 +133,9 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./ros/jazzy/simulation-rocm/Dockerfile
+          file: ./ros/jazzy/simulation/Dockerfile
+          build-args: |
+            RRB_IMAGE_AUTONOMY_TAG=autonomy-rocm-latest
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta_rocm.outputs.tags }}

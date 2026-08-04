@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-amd64:
+  build-autonomy-amd64:
     runs-on: ubuntu-latest
     outputs:
       digest: ${{ steps.push-amd64.outputs.digest }}
@@ -31,9 +31,9 @@ jobs:
           file: ./ros/jazzy/autonomy/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: wisniax/ros-rover-base:temp-amd64
+          tags: wisniax/ros-rover-base:temp-autonomy-amd64
 
-  build-arm64:
+  build-autonomy-arm64:
     runs-on: ubuntu-24.04-arm
     outputs:
       digest: ${{ steps.push-arm64.outputs.digest }}
@@ -58,11 +58,11 @@ jobs:
           file: ./ros/jazzy/autonomy/Dockerfile
           platforms: linux/arm64
           push: true
-          tags: wisniax/ros-rover-base:temp-arm64
+          tags: wisniax/ros-rover-base:temp-autonomy-arm64
 
   create-manifest:
     runs-on: ubuntu-latest
-    needs: [build-amd64, build-arm64]
+    needs: [build-autonomy-amd64, build-autonomy-arm64]
 
     steps:
       - name: Log in to Docker Hub
@@ -93,6 +93,46 @@ jobs:
           tags: ${{ steps.meta_combined.outputs.tags }}
           # Source images to include in the manifest list, using their digests
           sources: |
-            wisniax/ros-rover-base@${{ needs.build-amd64.outputs.digest }}
-            wisniax/ros-rover-base@${{ needs.build-arm64.outputs.digest }}
+            wisniax/ros-rover-base@${{ needs.build-autonomy-amd64.outputs.digest }}
+            wisniax/ros-rover-base@${{ needs.build-autonomy-arm64.outputs.digest }}
           index-annotations: ${{ steps.meta_combined.outputs.labels }}
+
+build-autonomy-rocm-amd64:
+    runs-on: ubuntu-latest
+    needs: [build-autonomy-amd64]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata for ROCm image
+        id: meta_rocm
+        uses: docker/metadata-action@v5
+        with:
+          images: wisniax/ros-rover-base
+          tags: |
+            type=raw,value=autonomy-rocm-latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=autonomy-rocm-{{date 'YYYY-MM-DD'}},enable=${{ github.ref == 'refs/heads/master' }}
+            type=ref,event=branch,prefix=autonomy-rocm-,enable=${{ github.ref != 'refs/heads/master' }}
+          labels: |
+            org.opencontainers.image.created={{date 'YYYY-MM-DDTHH:mm:ssZ'}}
+            org.opencontainers.image.source=${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Build and push ROCm AMD64 image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./ros/jazzy/autonomy-rocm/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta_rocm.outputs.tags }}
+          labels: ${{ steps.meta_rocm.outputs.labels }}
