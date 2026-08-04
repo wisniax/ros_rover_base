@@ -18,6 +18,4 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 RUN rm -f /etc/apt/apt.conf.d/keep-cache && \
     mv /etc/apt/apt.conf.d/docker-clean.bak /etc/apt/apt.conf.d/docker-clean
 
-USER ${RRB_USERNAME}
-
 CMD [ "/usr/local/bin/docker-entrypoint.sh" ]

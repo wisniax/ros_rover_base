@@ -7,7 +7,8 @@ RUN userdel -r ubuntu
 
 ARG USERNAME='rex'
 ARG PASSWORD='changeme'
-ARG SSH_PORT=22
+
+ENV SSH_PORT=22
 
 # Username that will be propagated
 ENV RRB_USERNAME=${USERNAME}
@@ -52,9 +53,6 @@ RUN usermod -aG sudo ${USERNAME}
 RUN mkdir -p --mode=700 ${XDG_RUNTIME_DIR} \
     && chown -R ${USERNAME}:${USERNAME} ${XDG_RUNTIME_DIR}
 
-# Change ssh port and expose it
-RUN sed -i "/^#\?Port/ { s/^#//; s/Port .*/Port ${SSH_PORT}/; }" /etc/ssh/sshd_config
-
 USER ${USERNAME}
 
 # Push docker env to docker system
@@ -81,5 +79,11 @@ RUN rm /home/${USERNAME}/nav_ws/nav_ws.mk
 # Reenable the default docker-clean config
 RUN sudo rm -f /etc/apt/apt.conf.d/keep-cache && \
     sudo mv /etc/apt/apt.conf.d/docker-clean.bak /etc/apt/apt.conf.d/docker-clean
+
+# owerwrite entry point
+COPY /ros/jazzy/autonomy/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+# entrypoint must run as root
+USER root
 
 CMD [ "/usr/local/bin/docker-entrypoint.sh" ]
