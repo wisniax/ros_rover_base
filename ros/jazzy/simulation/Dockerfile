@@ -8,8 +8,8 @@ RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/apt.conf.d/docker-clean.bak && 
     echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 
 # Install autonomy-related packages
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=rrb_lib_apt,target=/var/lib/apt,sharing=locked \
     apt update && \
     DEBIAN_FRONTEND=noninteractive \
     apt install -y ros-jazzy-ros-gz ros-jazzy-turtlebot3-gazebo
