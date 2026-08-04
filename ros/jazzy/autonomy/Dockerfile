@@ -7,7 +7,8 @@ RUN userdel -r ubuntu
 
 ARG USERNAME='rex'
 ARG PASSWORD='changeme'
-ARG SSH_PORT=22
+
+ENV SSH_PORT=22
 
 # Username that will be propagated
 ENV RRB_USERNAME=${USERNAME}
@@ -25,8 +26,8 @@ RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/apt.conf.d/docker-clean.bak && 
     echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 
 # Install autonomy-related packages
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=rrb_lib_apt,target=/var/lib/apt,sharing=locked \
     apt update && \
     DEBIAN_FRONTEND=noninteractive \
     apt install -y ros-dev-tools ros-jazzy-aruco-opencv ros-jazzy-aruco-ros \
@@ -52,9 +53,6 @@ RUN usermod -aG sudo ${USERNAME}
 RUN mkdir -p --mode=700 ${XDG_RUNTIME_DIR} \
     && chown -R ${USERNAME}:${USERNAME} ${XDG_RUNTIME_DIR}
 
-# Change ssh port and expose it
-RUN sed -i "/^#\?Port/ { s/^#//; s/Port .*/Port ${SSH_PORT}/; }" /etc/ssh/sshd_config
-
 USER ${USERNAME}
 
 # Push docker env to docker system
@@ -72,14 +70,20 @@ RUN echo "\nsource /opt/ros/jazzy/setup.bash\nexport ROS_DOMAIN_ID=0\n" >> /home
 # SETUP mesh navigation and navigation2 stack 
 COPY --chown=${USERNAME}:${USERNAME} ros/jazzy/autonomy/buildfiles/nav_ws_repos.yaml /home/${USERNAME}/nav_ws/nav_ws_repos.yaml
 COPY --chown=${USERNAME}:${USERNAME} ros/jazzy/autonomy/buildfiles/nav_ws.mk /home/${USERNAME}/nav_ws/nav_ws.mk
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    --mount=type=cache,target=/home/${USERNAME}/docker_cache/nav_ws,uid=1000,gid=1000,sharing=locked \
+RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=rrb_lib_apt,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,id=rrb_nav_ws,target=/home/${USERNAME}/docker_cache/nav_ws,uid=1000,gid=1000,sharing=locked \
     make -C "/home/${USERNAME}/nav_ws" -f "/home/${USERNAME}/nav_ws/nav_ws.mk"
 RUN rm /home/${USERNAME}/nav_ws/nav_ws.mk
 
 # Reenable the default docker-clean config
 RUN sudo rm -f /etc/apt/apt.conf.d/keep-cache && \
     sudo mv /etc/apt/apt.conf.d/docker-clean.bak /etc/apt/apt.conf.d/docker-clean
+
+# owerwrite entry point
+COPY /ros/jazzy/autonomy/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+# entrypoint must run as root
+USER root
 
 CMD [ "/usr/local/bin/docker-entrypoint.sh" ]

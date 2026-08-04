@@ -12,8 +12,8 @@ RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/apt.conf.d/docker-clean.bak && 
     echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 
 # Install random stuff
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=rrb_lib_apt,target=/var/lib/apt,sharing=locked \
     apt update && \
     DEBIAN_FRONTEND=noninteractive \
     apt install -y git gdb nano curl wget python3 python3-pip net-tools \
@@ -29,8 +29,8 @@ RUN ln -sf /usr/share/zoneinfo/Europe/Warsaw /etc/localtime
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Environment setup
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=rrb_lib_apt,target=/var/lib/apt,sharing=locked \
     apt update && \
     DEBIAN_FRONTEND=noninteractive \
     apt install -y ros-jazzy-ros2-socketcan libasio-dev libceres-dev ros-jazzy-diagnostic-updater \
