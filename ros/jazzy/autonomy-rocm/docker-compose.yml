@@ -1,0 +1,35 @@
+services:
+  ros-autonomy:
+    image: wisniax/ros-rover-base:autonomy-rocm-latest
+    stdin_open: true
+    container_name: ros-autonomy
+    hostname: ros-autonomy
+    tty: true
+    pid: "host"
+    ipc: "host"
+    init: true
+    network_mode: host
+    environment:
+      - TZ=Europe/Warsaw
+      # Override for default ssh port (22)
+      - SSH_PORT=3022 
+    volumes:
+      - type: bind
+        source: ./
+        target: /mnt/local
+        bind:
+          create_host_path: true
+      - type: bind
+        source: /dev/shm
+        target: /dev/shm
+    # GMK said missing render group so commented out in case of severe skill-issue
+    # group_add:
+    #   - video
+    #   - render
+    security_opt:
+      - seccomp:unconfined
+    # CDI not configured on GMK so old method it is.
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    restart: unless-stopped
