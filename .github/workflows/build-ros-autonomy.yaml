@@ -97,7 +97,7 @@ jobs:
             wisniax/ros-rover-base@${{ needs.build-autonomy-arm64.outputs.digest }}
           index-annotations: ${{ steps.meta_combined.outputs.labels }}
 
-build-autonomy-rocm-amd64:
+  build-autonomy-rocm-amd64:
     runs-on: ubuntu-latest
     needs: [build-autonomy-amd64]
     steps:
