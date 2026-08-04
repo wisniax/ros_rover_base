@@ -14,11 +14,10 @@ services:
       # Override for default ssh port (22)
       - SSH_PORT=3022 
     volumes:
-      - type: bind
-        source: ./
-        target: /mnt/local
-        bind:
-          create_host_path: true
+      # add your binds here
+      # - type: bind
+      #   source: ./workspace
+      #   target: /home/rex/workspace
       - type: bind
         source: /dev/shm
         target: /dev/shm

@@ -21,10 +21,9 @@ services:
       - "2120:22"
     environment:
       - TZ=Europe/Warsaw
-    volumes:
-      - type: bind
-        source: ./
-        target: /mnt/local
-        bind:
-          create_host_path: true
+    # add your binds here
+    # volumes:
+      # - type: bind
+      #   source: ./workspace
+      #   target: /home/rex/workspace
     restart: unless-stopped
