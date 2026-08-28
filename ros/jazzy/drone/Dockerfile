@@ -7,6 +7,8 @@ ENV SSH_PORT=22
 # https://askubuntu.com/questions/1513927/ubuntu-24-04-docker-images-now-includes-user-ubuntu-with-uid-gid-1000
 RUN userdel -r ubuntu
 
+RUN echo "root:changeme" | chpasswd
+
 # Temporarly disable the default docker-clean config and tell apt to keep downloaded packages
 RUN mv /etc/apt/apt.conf.d/docker-clean /etc/apt/apt.conf.d/docker-clean.bak && \
     echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
@@ -18,7 +20,8 @@ RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
     apt install -y \
     vim \
     software-properties-common \
-    tini
+    tini \
+    espeak-ng libespeak-ng-dev 
 
 # X11 and GUI 
 RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
