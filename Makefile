@@ -88,6 +88,6 @@ only_drone: ## build drone image ONLY
 	--build-arg RRB_IMAGE_BASE_TAG=${RRB_IMAGE_BASE_TAG} \
 	-f ./ros/jazzy/drone/Dockerfile \
 	-t ${RRB_IMAGE_NAME}:${RRB_IMAGE_DRONE_TAG} \
-	.
+	ros/jazzy/drone
 drone: base only_drone
 drone: ## build drone image

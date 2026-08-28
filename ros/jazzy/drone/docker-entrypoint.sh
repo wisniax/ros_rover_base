@@ -25,7 +25,7 @@ echo " - SSH_PORT:  ${SSH_PORT}"
 
 echo "--------------------------------------------------------------------"
 
-echo "Port ${SSH_PORT}\n" > /etc/ssh/sshd_config.d/90-env-ssh-port.config
+echo -e "Port ${SSH_PORT}\n" > /etc/ssh/sshd_config.d/90-dockerenv-ssh-port.conf
 
 if service ssh start; then
     echo "To connect to the container, use ssh rex@localhost -p ${SSH_PORT}"

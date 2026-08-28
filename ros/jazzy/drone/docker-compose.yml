@@ -1,5 +1,6 @@
 services:
   drone-sim:
+    image: wisniax/ros-rover-base:drone-latest
     build: .
     container_name: raptors-drone-dev
     hostname: raptors-drone-dev
@@ -7,18 +8,25 @@ services:
     tty: true
     privileged: true
     network_mode: host
+    ipc: host
+    pid: "host"
     
     # X11 Forwarding
     environment:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
       - XAUTHORITY=/tmp/.docker.xauth
+      - SSH_PORT=2222
     
     volumes:
       - ./workspace:/workspace
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+      - /dev/shm:/dev/shm
 
+    security_opt:
+      - seccomp:unconfined
+      
     # Intel/AMD GPU
     devices:
       - /dev/dri:/dev/dri
