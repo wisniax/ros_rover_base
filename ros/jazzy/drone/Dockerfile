@@ -21,7 +21,7 @@ RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
     vim \
     software-properties-common \
     tini \
-    espeak-ng libespeak-ng-dev 
+    espeak-ng libespeak-ng-dev pulseaudio-utils
 
 # X11 and GUI 
 RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
@@ -121,13 +121,13 @@ RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
     gstreamer1.0-plugins-bad
 
 # Download and extract QGroundControl
-RUN wget https://d176tv9ibo4jno.cloudfront.net/latest/QGroundControl-x86_64.AppImage \
-        -O /tmp/QGroundControl.AppImage \
-    && chmod +x /tmp/QGroundControl.AppImage \
-    && cd /tmp && ./QGroundControl.AppImage --appimage-extract \
-    && mv /tmp/squashfs-root /opt/QGroundControl \
-    && rm /tmp/QGroundControl.AppImage \
-    && ln -s /opt/QGroundControl/AppRun /usr/local/bin/qgroundcontrol
+# RUN wget https://d176tv9ibo4jno.cloudfront.net/latest/QGroundControl-x86_64.AppImage \
+#         -O /tmp/QGroundControl.AppImage \
+#     && chmod +x /tmp/QGroundControl.AppImage \
+#     && cd /tmp && ./QGroundControl.AppImage --appimage-extract \
+#     && mv /tmp/squashfs-root /opt/QGroundControl \
+#     && rm /tmp/QGroundControl.AppImage \
+#     && ln -s /opt/QGroundControl/AppRun /usr/local/bin/qgroundcontrol
 
 # ArduPilot dependencies
 RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
@@ -173,9 +173,9 @@ RUN useradd -m -s /bin/bash -G dialout,video ardupilot \
     && echo "ardupilot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Give ardupilot ownership of the QGC
-RUN chown -R ardupilot:ardupilot /opt/QGroundControl && \
-    chown -h ardupilot:ardupilot /usr/local/bin/qgroundcontrol && \
-    chmod +x /usr/local/bin/qgroundcontrol
+# RUN chown -R ardupilot:ardupilot /opt/QGroundControl && \
+#     chown -h ardupilot:ardupilot /usr/local/bin/qgroundcontrol && \
+#     chmod +x /usr/local/bin/qgroundcontrol
 
 # Prepare ArduPilot folder
 RUN mkdir -p /opt/ardupilot \
@@ -243,4 +243,4 @@ RUN sudo rm -f /etc/apt/apt.conf.d/keep-cache && \
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-ENTRYPOINT ["tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
