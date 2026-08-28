@@ -65,6 +65,31 @@ RUN wget https://raw.githubusercontent.com/mavlink/mavros/refs/heads/ros2/mavros
     && ./install_geographiclib_datasets.sh \
     && rm install_geographiclib_datasets.sh
 
+
+# QGroundControl dependencies (Updated for Ubuntu 24.04 Noble)
+RUN apt-get update && apt-get install -y \
+    libpulse-mainloop-glib0 \
+    libudev1 \
+    libdbus-1-3 \
+    libfuse2 \
+    libxcb-xinerama0 \
+    libxkbcommon-x11-0 \
+    libxcb-cursor-dev \
+    libasound2t64 \
+    libnss3 \
+    gstreamer1.0-gl \
+    gstreamer1.0-plugins-bad \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download and extract QGroundControl
+RUN wget https://d176tv9ibo4jno.cloudfront.net/latest/QGroundControl-x86_64.AppImage \
+        -O /tmp/QGroundControl.AppImage \
+    && chmod +x /tmp/QGroundControl.AppImage \
+    && cd /tmp && ./QGroundControl.AppImage --appimage-extract \
+    && mv /tmp/squashfs-root /opt/QGroundControl \
+    && rm /tmp/QGroundControl.AppImage \
+    && ln -s /opt/QGroundControl/AppRun /usr/local/bin/qgroundcontrol
+
 # ArduPilot dependencies
 RUN apt-get update && apt-get install -y \
     python3-dev \
@@ -75,9 +100,21 @@ RUN apt-get update && apt-get install -y \
     libxslt1-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install wxPython for MAVProxy GUI
+# Required build dependencies for source compilation
+RUN apt-get update && apt-get install -y \
+    libgtk-3-dev \
+    libsdl2-dev \
+    libnotify-dev \
+    libxtst-dev \
+    libxss-dev \
+    libxxf86vm-dev \
+    libsm-dev \
+    pkg-config \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Then install from mirror
 RUN pip3 install --break-system-packages \
-    -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-24.04 \
     wxPython
 
 # Mavproxy
@@ -87,8 +124,13 @@ RUN pip3 install --break-system-packages \
 
 # Ardupilot and its environment
 # Create non-root user
-RUN useradd -m -s /bin/bash -G dialout ardupilot \
+RUN useradd -m -s /bin/bash -G dialout,video ardupilot \
     && echo "ardupilot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Give ardupilot ownership of the QGC
+RUN chown -R ardupilot:ardupilot /opt/QGroundControl && \
+    chown -h ardupilot:ardupilot /usr/local/bin/qgroundcontrol && \
+    chmod +x /usr/local/bin/qgroundcontrol
 
 # Prepare ArduPilot folder
 RUN mkdir -p /opt/ardupilot \
@@ -106,6 +148,22 @@ RUN git clone --recurse-submodules https://github.com/ArduPilot/ardupilot.git . 
     && git checkout $LATEST_TAG \
     && Tools/environment_install/install-prereqs-ubuntu.sh -y
 
+# Switch to root temporarily to install Python build dependencies
+USER root
+RUN pip3 install --break-system-packages \
+    future \
+    empy \
+    pexpect
+
+# Switch back to ardupilot user for compilation
+USER ardupilot
+WORKDIR /opt/ardupilot
+
+# Precompile ArduPilot for SITL
+RUN cd /opt/ardupilot \
+    && ./waf configure --board sitl \
+    && ./waf build --target bin/arducopter
+
 # Add ArduPilot tools to PATH
 ENV PATH="/opt/ardupilot/Tools/autotest:${PATH}"
 ENV PATH="/usr/lib/ccache:${PATH}"
@@ -118,23 +176,21 @@ WORKDIR /opt
 # Configure Git for root user
 RUN git config --global --add safe.directory /opt/ardupilot
 
-# Install ArduPilot Python build dependencies for root user
-RUN pip3 install --break-system-packages \
-    future \
-    empy \
-    pexpect
-
 WORKDIR /workspace
 
-RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
+COPY aliases/ /etc/profile.d/drone_aliases/
+RUN echo "# Load drone aliases" >> /etc/bash.bashrc && \
+    echo "for f in /etc/profile.d/drone_aliases/*.sh; do source \$f; done" >> /etc/bash.bashrc && \
+    echo "source /opt/ros/jazzy/setup.bash" >> /etc/bash.bashrc
 
 # Set environment variables
 ENV ARDUPILOT_HOME=/opt/ardupilot
-ENV FCU_URL="udp://:14550@"
+ENV FCU_URL="udp://:14551@"
 
 # Set display for X11
 ENV DISPLAY=:0
 ENV QT_X11_NO_MITSHM=1
+ENV QT_QPA_PLATFORM=xcb
 
 RUN echo '#!/bin/bash\n\
 set -e\n\

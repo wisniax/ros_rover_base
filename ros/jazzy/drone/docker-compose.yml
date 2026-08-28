@@ -1,0 +1,24 @@
+services:
+  drone-sim:
+    build: .
+    container_name: raptors-drone-dev
+    hostname: raptors-drone-dev
+    stdin_open: true
+    tty: true
+    privileged: true
+    network_mode: host
+    
+    # X11 Forwarding
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - XAUTHORITY=/tmp/.docker.xauth
+    
+    volumes:
+      - ./workspace:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+
+    # Intel/AMD GPU
+    devices:
+      - /dev/dri:/dev/dri
