@@ -1,0 +1,6 @@
+# nav_ws_repos.yaml
+repositories:
+  rtabmap_ros:
+    type: git
+    url: https://github.com/introlab/rtabmap.git
+    version: 0.23.8
