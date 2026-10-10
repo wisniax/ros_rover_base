@@ -1,10 +1,6 @@
 ARG RRB_IMAGE_BASE_TAG=latest
 FROM docker.io/wisniax/ros-rover-base:${RRB_IMAGE_BASE_TAG}
 
-# devcontainers ***fix*** by ubuntu devs...
-# https://askubuntu.com/questions/1513927/ubuntu-24-04-docker-images-now-includes-user-ubuntu-with-uid-gid-1000
-RUN userdel -r ubuntu
-
 ARG USERNAME='rex'
 ARG PASSWORD='changeme'
 
