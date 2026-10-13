@@ -68,7 +68,7 @@ COPY --chown=${USERNAME}:${USERNAME} ros/jazzy/autonomy/buildfiles/nav_ws_repos.
 COPY --chown=${USERNAME}:${USERNAME} ros/jazzy/autonomy/buildfiles/nav_ws.mk /home/${USERNAME}/nav_ws/nav_ws.mk
 RUN --mount=type=cache,id=rrb_cache_apt,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=rrb_lib_apt,target=/var/lib/apt,sharing=locked \
-    --mount=type=cache,id=rrb_nav_ws,target=/home/${USERNAME}/docker_cache/nav_ws,uid=1000,gid=1000,sharing=locked \
+    --mount=type=cache,id=rrb_nav_ws,target=/home/${USERNAME}/docker_cache/nav_ws,uid=1001,gid=1000,sharing=locked \
     make -C "/home/${USERNAME}/nav_ws" -f "/home/${USERNAME}/nav_ws/nav_ws.mk"
 RUN rm /home/${USERNAME}/nav_ws/nav_ws.mk
 
